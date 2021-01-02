@@ -89,8 +89,7 @@ class _UpdateScreenState extends State<UpdateScreen> {
     final pickedFile = await picker.getImage(
       source: ImageSource.camera,
       maxHeight: 1000,
-      maxWidth: 1000,
-      imageQuality: 90,
+      maxWidth: 500,
       preferredCameraDevice: CameraDevice.front,
     );
     setState(

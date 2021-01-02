@@ -15,6 +15,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_audio_recorder/flutter_audio_recorder.dart';
 
 import '../widgets/SideDrawer.dart';
+import './HomeScreen.dart';
 
 class VoiceVerificationScreen extends StatefulWidget {
   static const routename = './VoiceVerification';
@@ -125,7 +126,7 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
       _recording = true;
     });
 
-    Timer(Duration(seconds: 3), () {
+    Timer(Duration(seconds:2), () {
       _stop();
       setState(() {
         _recording = false;
@@ -141,14 +142,16 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
     );
   }
 
-  void verifyVoice() async {
-    const url = 'https://speakerverification.herokuapp.com/VerifyVoice'; //add the deployed Voice Verification API here!
+  Future<void> verifyVoice() async {
+    const url =
+        'http://34.121.145.40:5500/VerifyVoice'; //add the deployed Voice Verification API here!
     var bytes = file.readAsBytesSync();
     String voiceEncoded = base64.encode(bytes);
     print(file.path);
     DocumentSnapshot doc = await Firestore.instance
         .document('Users/${_user.uid}/VoiceMapping/${_user.uid}')
         .get();
+    print(doc);
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
@@ -160,6 +163,7 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
         },
       ),
     );
+    print(response.body);
     await Firestore.instance
         .document('Users/${_user.uid}/VoiceMapping/${_user.uid}')
         .updateData(
@@ -175,26 +179,33 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
       },
     );
     print(response.body);
-    double distance = double.parse(response.body);
-    verifyVoiceglobalKey.currentState.showSnackBar(
-      SnackBar(
-        content: Center(
-          child: CircularProgressIndicator(),
-        ),
-        duration: Duration(seconds: 12),
-      ),
-    );
+    double distance = json.decode(response.body)['voiceresults'];
+    // verifyVoiceglobalKey.currentState.showSnackBar(
+    //   SnackBar(
+    //     content: Center(
+    //       child: CircularProgressIndicator(),
+    //     ),
+    //     duration: Duration(seconds: 5),
+    //   ),
+    // );
     showDialog(
       builder: (ctx) {
-        return Dialog(
-          child: Container(
-            child: Center(
-              child: (distance <= 38000)
-                  ? Icon(
-                      Icons.verified,
-                    )
-                  : Icon(
-                      Icons.not_interested,
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context).pushNamed(HomeScreen.routename);
+          },
+          child: Dialog(
+            child: Container(
+              child: (distance == null)
+                  ? CircularProgressIndicator()
+                  : Center(
+                      child: (distance <= 38000)
+                          ? Icon(
+                              Icons.verified,
+                            )
+                          : Icon(
+                              Icons.not_interested,
+                            ),
                     ),
             ),
           ),
@@ -206,7 +217,6 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
 
   @override
   void initState() {
-
     super.initState();
     _initiate();
     _initUser();
@@ -254,7 +264,7 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
               height: 70,
               color: Colors.amber,
               child: Icon(
-                _recording ? Icons.mic_off : Icons.mic,
+                _recording ? Icons.mic : Icons.mic_off,
                 size: 50,
               ),
             ),
@@ -267,7 +277,7 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
                 children: [
                   RaisedButton(
                     color: Colors.black,
-                    onPressed: () {
+                    onPressed: () async {
                       recordVoice();
                     },
                     child: Text(
@@ -281,7 +291,19 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
                   ),
                   RaisedButton(
                     color: Colors.black,
-                    onPressed: () {},
+                    onPressed: () async {
+                      verifyVoiceglobalKey.currentState.showSnackBar(
+                        SnackBar(
+                          content: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                          duration: Duration(seconds: 5),
+                        ),
+                      );
+                      await verifyVoice();
+
+                    },
+                    
                     child: Text(
                       'Verify!',
                       style: TextStyle(

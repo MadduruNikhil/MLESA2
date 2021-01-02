@@ -125,7 +125,7 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
       _recording = true;
     });
 
-    Timer(Duration(seconds: 3), () {
+    Timer(Duration(seconds: 2), () {
       _stop();
       setState(() {
         _recording = false;
@@ -134,7 +134,7 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
     print(_currentStatus);
     updateVoiceglobalKey.currentState.showSnackBar(
       SnackBar(
-        content: (file.readAsBytesSync().isNotEmpty)
+        content: (file.readAsBytesSync() != null)
             ? Text('Recorded! You can upload')
             : Text('Record Again!'),
       ),
@@ -220,7 +220,7 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
               height: 70,
               color: Colors.amber,
               child: Icon(
-                _recording ? Icons.mic_off : Icons.mic,
+                _recording ? Icons.mic : Icons.mic_off,
                 size: 50,
               ),
             ),

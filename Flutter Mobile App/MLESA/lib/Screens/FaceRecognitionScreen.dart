@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../widgets/SideDrawer.dart';
+import './HomeScreen.dart';
 
 class FaceRecognitionScreen extends StatefulWidget {
   static const routename = './FaceVerificationScreen';
@@ -18,12 +19,13 @@ class FaceRecognitionScreen extends StatefulWidget {
 class _FaceRecognitionScreenState extends State<FaceRecognitionScreen> {
   final picker = ImagePicker();
   File _image;
+  var loading = true;
 
-  Future<Map<String,dynamic>> faceverification() async {
+  Future<Map<String, dynamic>> faceverification() async {
     DocumentSnapshot doc = await Firestore.instance
         .document('Users/${_user.uid}/FaceMapping/${_user.uid}')
         .get();
-    const url = 'https://fvmlesa.herokuapp.com/'; //add the deployed facerecogniton API here!
+    const url = 'http://34.121.145.40:5500/VerifyFace';
     if (_image == null) {
       verifyglobalKey.currentState.showSnackBar(
         SnackBar(
@@ -54,17 +56,18 @@ class _FaceRecognitionScreenState extends State<FaceRecognitionScreen> {
           },
         ),
       );
+
       return json.decode(response.body);
     }
   }
 
   Future<void> getImageData() async {
     final pickedFile = await picker.getImage(
-      maxHeight: 600,
-      maxWidth: 600,
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.front,
-    );
+        source: ImageSource.camera,
+        maxHeight: 1000,
+        maxWidth: 500,
+        preferredCameraDevice: CameraDevice.front);
+
     setState(() {
       _image = File(pickedFile.path);
     });
@@ -172,36 +175,41 @@ class _FaceRecognitionScreenState extends State<FaceRecognitionScreen> {
                     content: Center(
                       child: CircularProgressIndicator(),
                     ),
-                    duration: Duration(seconds: 10),
+                    duration: Duration(seconds: 30),
                   ),
                 );
-                // results = await faceverification();
-                // print(results);
-                // var distance = results['pair_2']['distance'];
-                // var legsidedistance = results['pair_1']['distance'];
-                // var offsidedistance = results['pair_3']['distance'];
-                // bool sidepic = ((legsidedistance + offsidedistance) / 2 < 0.5)
-                //     ? true
-                //     : false;
-                // bool mainpic = (distance < 0.2) ? true : false;
-                // showDialog(
-                //   builder: (ctx) {
-                //     return Dialog(
-                //       child: Container(
-                //         child: Center(
-                //           child: (sidepic && mainpic)
-                //               ? Icon(
-                //                   Icons.verified,
-                //                 )
-                //               : Icon(
-                //                   Icons.not_interested,
-                //                 ),
-                //         ),
-                //       ),
-                //     );
-                //   },
-                //   context: context,
-                // );
+                Map<String, dynamic> results = await faceverification();
+
+                print(results);
+                var distance = results['pair_1'];
+                var legsidedistance = results['pair_2'];
+                var offsidedistance = results['pair_3'];
+                showDialog(
+                  barrierDismissible: false,
+                  builder: (ctx) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pushNamed(HomeScreen.routename);
+                      },
+                      child: Dialog(
+                        child: Container(
+                          child: Center(
+                            child: ((distance <= 0.4 &&
+                                    legsidedistance <= 0.4 &&
+                                    offsidedistance <= 0.4))
+                                ? Icon(
+                                    Icons.verified,
+                                  )
+                                : Icon(
+                                    Icons.not_interested,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  context: context,
+                );
               },
             )
           ],
