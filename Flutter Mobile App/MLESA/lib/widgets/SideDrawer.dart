@@ -30,31 +30,23 @@ class _SideDrawerState extends State<SideDrawer> {
         ),
         child: ListView(
           children: [
-            Container(
-              margin: EdgeInsets.only(
-                left: 30,
-                right: 30,
-                bottom: 10,
-              ),
-              height: 200,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(
-                  50,
-                ),
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.teal,
-                    Colors.deepPurple,
-                  ],
-                ),
-              ),
-              child: IconButton(
-                icon: Icon(Icons.logout),
-                onPressed: () {
-                  setState(() {
+           Card(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(
+                    width: 4,
+                    color: Colors.deepPurple,
+                  )),
+              margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+              color: Colors.amber,
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: ListTile(
+                  title: Text('Logout'),
+                  onTap: () {
                     FirebaseAuth.instance.signOut();
-                  });
-                },
+                  },
+                ),
               ),
             ),
             Card(
