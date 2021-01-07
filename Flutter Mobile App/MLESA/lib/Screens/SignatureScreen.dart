@@ -28,8 +28,6 @@ class _SignatureScreenState extends State<SignatureScreen> {
     velocityRange: 2.0,
   );
 
-  
-
   void uploadsign() async {
     if (rawImage.value != null) {
       String signEncoded = base64.encode(rawImage.value.buffer.asUint8List());
@@ -72,13 +70,13 @@ class _SignatureScreenState extends State<SignatureScreen> {
   Widget build(BuildContext context) {
     final devicesize = MediaQuery.of(context).size;
     return Scaffold(
-       extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Home',
+          'Signature',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -88,7 +86,12 @@ class _SignatureScreenState extends State<SignatureScreen> {
       drawer: SideDrawer(),
       key: signdetailskey,
       body: Container(
-        color: Colors.blueGrey,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('./assets/images/Background.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
         width: devicesize.width,
         height: devicesize.height,
         child: SafeArea(

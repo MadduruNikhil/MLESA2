@@ -77,12 +77,12 @@ class _UpdateScreenState extends State<UpdateScreen> {
       },
     );
     updateglobalKey.currentState.showSnackBar(
-        SnackBar(
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.fixed,
-          content: Text(' Uploaded!'),
-        ),
-      );
+      SnackBar(
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.fixed,
+        content: Text(' Uploaded!'),
+      ),
+    );
   }
 
   Future<void> getImagedata(String side) async {
@@ -160,7 +160,6 @@ class _UpdateScreenState extends State<UpdateScreen> {
   Widget build(BuildContext context) {
     final devicesize = MediaQuery.of(context).size;
     return Scaffold(
-      drawer: SideDrawer(),
       key: updateglobalKey,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -185,7 +184,10 @@ class _UpdateScreenState extends State<UpdateScreen> {
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                     decoration: BoxDecoration(
-                      color: Colors.amber,
+                      image: DecorationImage(
+                        image: AssetImage('./assets/images/Background.png'),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,

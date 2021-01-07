@@ -10,13 +10,23 @@ from PIL import Image
 from mtcnn.mtcnn import MTCNN
 import cv2.cv2 as cv
 import json
+
+from keras.models import Sequential
+import tensorflow as tf
+from keras.preprocessing import image
+from keras.preprocessing.image import ImageDataGenerator
+
+
+
 from deepface import DeepFace
+
 
 
 app = Flask(__name__)
 
 filesep = os.path.sep
 
+model = tf.keras.models.load_model('model_checkpoint.hdf5',compile=True)
 
 def verify_Face(UserID):
     FrontPath = 'Users' + filesep + 'FaceData' + \
@@ -27,33 +37,35 @@ def verify_Face(UserID):
         filesep + UserID + filesep + 'rightSide.jpeg'
     TargetPath = 'Users' + filesep + 'FaceData' + \
         filesep + UserID + filesep + 'verifySide.jpeg'
-    # extract_face(FrontPath)
-    # extract_face(LeftPath)
-    # extract_face(RightPath)
-    # extract_face(TargetPath)
+    if(!extract_face(FrontPath)) {
+        retrun {'status':False,'Message':'Fake Upload - Front Imprint'}
+    }
+    if(!extract_face(LeftPath)) {
+        retrun {'status':False,'Message':'Fake Upload - Left Imprint'}
+    }
+    if(!extract_face(RightPath)) {
+        retrun {'status':False,'Message':'Fake Upload - Right Imprint'}
+    }
+    if(!extract_face(TargetPath)) {
+        retrun {'status':False,'Message':'Fake Upload - Verify Imprint'}
+    }
     results = DeepFace.verify([[TargetPath, FrontPath], [TargetPath, LeftPath], [
                               TargetPath, RightPath], ], enforce_detection=False, model_name='Facenet')
     return {'pair_1': results['pair_1']['distance'], 'pair_2': results['pair_2']['distance'], 'pair_3': resul
-            ts['pair_3']['distance']}
+            ts['pair_3']['distance'],'status':True}
 
 
-def extract_face(filename, required_size=(400, 400)):
-    # image = Image.open(filename)
-    # width, height = image.size
-    # image = image.convert('RGB')
-    # pixels = asarray(image)
-    # detector = MTCNN()
-    # results = detector.detect_faces(pixels)
-    # x1, y1, width, height = results[0]['box']
-    # x1, y1 = abs(x1), abs(y1)
-    # x2, y2 = x1 + width, y1 + height
-    # # extract the face
-    # face = pixels[y1:y2, x1:x2]
-    # # resize pixels to the model size
-    # image = Image.fromarray(face)
-    # image = image.resize(required_size)
-    # image.save(filename)
-    return filename
+def extract_face(loc):
+    test_image = image.load_img(loc, target_size = (128,128))
+    test_image = image.img_to_array(test_image)
+    test_image = np.expand_dims(test_image, axis =0)
+    result = model.predict(test_image)
+    if result[0][0] == 1:
+        predictions = True
+    else:
+        predictions = False
+    print('Prediction: ',predictions)
+    return predictions
 
 
 def Verify_Voice(uploadedPath, VerifiedPath, UserID):

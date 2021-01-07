@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:file/file.dart';
 import 'dart:io' as IO;
 import 'package:file/local.dart';
+import 'package:convert/convert.dart';
 
 import 'package:http/http.dart' as http;
 
@@ -14,7 +15,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:flutter_audio_recorder/flutter_audio_recorder.dart';
 
-import '../widgets/SideDrawer.dart';
 import './HomeScreen.dart';
 
 class VoiceVerificationScreen extends StatefulWidget {
@@ -37,11 +37,13 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
   Recording _current;
   RecordingStatus _currentStatus = RecordingStatus.Unset;
 
+  bool uploadedVoice = false;
+
   // var _verification = false;
   // var _loading = false;
   var _recording = false;
 
-  _initiate() async {
+  Future<void> _initiate() async {
     try {
       if (await FlutterAudioRecorder.hasPermissions) {
         String customPath = '/audio';
@@ -51,20 +53,25 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
         } else {
           appDocDirectory = await getExternalStorageDirectory();
         }
-
         customPath = appDocDirectory.path +
             customPath +
             DateTime.now().millisecondsSinceEpoch.toString() +
             '.wav';
         print(customPath);
-        _recorder =
-            FlutterAudioRecorder(customPath, audioFormat: AudioFormat.WAV);
+        _recorder = FlutterAudioRecorder(
+          customPath,
+          audioFormat: AudioFormat.WAV,
+          sampleRate: 16000,
+        );
 
         await _recorder.initialized;
         // after initialization
         var current = await _recorder.current(channel: 0);
         print(current);
         // should be "Initialized", if all working fine
+        if (!mounted) {
+          return;
+        }
         setState(() {
           _current = current;
           _currentStatus = current.status;
@@ -86,6 +93,9 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
     try {
       await _recorder.start();
       var recording = await _recorder.current(channel: 0);
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _current = recording;
       });
@@ -97,6 +107,9 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
         }
 
         var current = await _recorder.current(channel: 0);
+        if (!mounted) {
+          return;
+        }
         setState(() {
           _current = current;
           _currentStatus = _current.status;
@@ -111,8 +124,16 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
   _stop() async {
     var result = await _recorder.stop();
     file = widget.localFileSystem.file(result.path);
-    print(file.path);
-    print("File length: ${await file.length()}");
+    verifyVoiceglobalKey.currentState.showSnackBar(
+      SnackBar(
+        content: (file != null)
+            ? Text('Recorded! You can Verify')
+            : Text('Record Again!'),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _current = result;
       _currentStatus = _current.status;
@@ -120,46 +141,57 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
     print(_current.status);
   }
 
-  void recordVoice() async {
+  Future<void> recordVoice() async {
+    await _initiate();
     _start();
-    setState(() {
-      _recording = true;
-    });
-
-    Timer(Duration(seconds:2), () {
-      _stop();
-      setState(() {
-        _recording = false;
-      });
-    });
-    print(_currentStatus);
-    verifyVoiceglobalKey.currentState.showSnackBar(
-      SnackBar(
-        content: (file.readAsBytesSync().isNotEmpty)
-            ? Text('Recorded! You can upload')
-            : Text('Record Again!'),
-      ),
+    if (!mounted) {
+      return;
+    }
+    setState(
+      () {
+        _recording = true;
+      },
     );
+
+    Timer(
+      Duration(seconds: 6),
+      () {
+        _stop();
+        if (!mounted) {
+          return;
+        }
+        setState(
+          () {
+            _recording = false;
+          },
+        );
+      },
+    );
+    print(_currentStatus);
   }
 
-  Future<void> verifyVoice() async {
-    const url =
-        'http://34.121.145.40:5500/VerifyVoice'; //add the deployed Voice Verification API here!
-    var bytes = file.readAsBytesSync();
-    String voiceEncoded = base64.encode(bytes);
-    print(file.path);
+  Future<String> getProfileId() async {
     DocumentSnapshot doc = await Firestore.instance
         .document('Users/${_user.uid}/VoiceMapping/${_user.uid}')
         .get();
-    print(doc);
+    return doc.data['VoiceProfileID'];
+  }
+
+  Future<void> verifyVoice() async {
+    var data = file.readAsBytesSync();
+    final String profileId = await getProfileId();
+    final url =
+        'https://westus.api.cognitive.microsoft.com//speaker/verification/v2.0/text-independent/profiles/$profileId/verify';
+
     final response = await http.post(
       url,
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "Ocp-Apim-Subscription-Key": "d621ac82ff714308920f5e712722b46d",
+      },
       body: json.encode(
         {
-          'UserID': _user.uid,
-          'VoiceData': voiceEncoded,
-          'UploadedVoiceData': doc.data['UploadedVoiceData']
+          "audioData": hex.encode(data),
         },
       ),
     );
@@ -168,7 +200,7 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
         .document('Users/${_user.uid}/VoiceMapping/${_user.uid}')
         .updateData(
       {
-        'VoiceData': voiceEncoded,
+        'VoiceData': hex.encode(data),
       },
     ).catchError(
       (error) {
@@ -178,35 +210,31 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
         }
       },
     );
-    print(response.body);
-    double distance = json.decode(response.body)['voiceresults'];
-    // verifyVoiceglobalKey.currentState.showSnackBar(
-    //   SnackBar(
-    //     content: Center(
-    //       child: CircularProgressIndicator(),
-    //     ),
-    //     duration: Duration(seconds: 5),
-    //   ),
-    // );
+    Map<String, dynamic> verifiedData = json.decode(response.body);
     showDialog(
       builder: (ctx) {
         return GestureDetector(
           onTap: () {
-            Navigator.of(context).pushNamed(HomeScreen.routename);
+            Navigator.of(context).popAndPushNamed(HomeScreen.routename);
           },
           child: Dialog(
             child: Container(
-              child: (distance == null)
+              child: (verifiedData == null)
                   ? CircularProgressIndicator()
-                  : Center(
-                      child: (distance <= 38000)
-                          ? Icon(
-                              Icons.verified,
-                            )
-                          : Icon(
-                              Icons.not_interested,
-                            ),
-                    ),
+                  : Column(
+                    children: [
+                      Text(verifiedData.toString(),),
+                      Center(
+                          child: (verifiedData['recognitionResult'] == 'Accept' && verifiedData['score'] >= 0.75)
+                              ? Icon(
+                                  Icons.verified,
+                                )
+                              : Icon(
+                                  Icons.not_interested,
+                                ),
+                        ),
+                    ],
+                  ),
             ),
           ),
         );
@@ -215,22 +243,40 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
     );
   }
 
+  _initUser() async {
+    _user = await FirebaseAuth.instance.currentUser();
+    DocumentSnapshot doc = await Firestore.instance
+        .document('Users/${_user.uid}/VoiceMapping/${_user.uid}')
+        .get();
+    if (!mounted) {
+      return;
+    }
+    setState(
+      () {
+        uploadedVoice = doc.data['UploadedVoice'];
+      },
+    );
+    print(uploadedVoice);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    if (mounted) {
+      _recorder.stop();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _initiate();
     _initUser();
-  }
-
-  Future<void> _initUser() async {
-    _user = await FirebaseAuth.instance.currentUser();
   }
 
   @override
   Widget build(BuildContext context) {
     final devicesize = MediaQuery.of(context).size;
     return Scaffold(
-      drawer: SideDrawer(),
       key: verifyVoiceglobalKey,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -245,92 +291,123 @@ class _VoiceVerificationScreenState extends State<VoiceVerificationScreen> {
           ),
         ),
       ),
-      body: Container(
-        height: devicesize.height,
-        width: devicesize.width,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.purple,
-              Colors.pink,
-            ],
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
+      body: (!uploadedVoice)
+          ? Container(
+              height: devicesize.height,
               width: devicesize.width,
-              height: 70,
-              color: Colors.amber,
-              child: Icon(
-                _recording ? Icons.mic : Icons.mic_off,
-                size: 50,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  FlatButton(
+                    onPressed: () {
+                      Navigator.of(context).pushNamed(HomeScreen.routename);
+                    },
+                    child: Text('=> Upload Voice First'),
+                  ),
+                  LinearProgressIndicator(),
+                  RaisedButton(
+                    onPressed: () {
+                      Navigator.of(context).pushNamed(HomeScreen.routename);
+                    },
+                    child: Text('Return'),
+                  ),
+                ],
               ),
-            ),
-            Container(
+            )
+          : Container(
+              height: devicesize.height,
               width: devicesize.width,
-              height: 70,
-              color: Colors.amber,
-              child: Row(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('./assets/images/Background.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  RaisedButton(
-                    color: Colors.black,
-                    onPressed: () async {
-                      recordVoice();
-                    },
-                    child: Text(
-                      'Record!',
-                      style: TextStyle(
-                          color: Colors.yellow, fontWeight: FontWeight.bold),
+                  Container(
+                    alignment: Alignment.center,
+                    width: devicesize.width,
+                    height: 70,
+                    color: Colors.amber,
+                    child: _recording
+                        ? Text('${6 - _current.duration.inSeconds}')
+                        : Text('Need to Upload total of 20 Seconds of Data'),
+                  ),
+                  Container(
+                    width: devicesize.width,
+                    height: 70,
+                    color: Colors.amber,
+                    child: Icon(
+                      _recording ? Icons.mic : Icons.mic_off,
+                      size: 50,
+                    ),
+                  ),
+                  Container(
+                    width: devicesize.width,
+                    height: 70,
+                    color: Colors.amber,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        RaisedButton(
+                          color: Colors.black,
+                          onPressed: () {
+                            recordVoice();
+                          },
+                          child: Text(
+                            'Record!',
+                            style: TextStyle(
+                                color: Colors.yellow,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 20,
+                        ),
+                        RaisedButton(
+                          color: Colors.black,
+                          onPressed: () async {
+                            verifyVoiceglobalKey.currentState.showSnackBar(
+                              SnackBar(
+                                content: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                                duration: Duration(seconds: 5),
+                              ),
+                            );
+                            await verifyVoice();
+                            _initiate();
+                          },
+                          child: Text(
+                            'Verify!',
+                            style: TextStyle(
+                              color: Colors.yellow,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   SizedBox(
-                    width: 20,
+                    height: 40,
                   ),
-                  RaisedButton(
-                    color: Colors.black,
-                    onPressed: () async {
-                      verifyVoiceglobalKey.currentState.showSnackBar(
-                        SnackBar(
-                          content: Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                          duration: Duration(seconds: 5),
-                        ),
-                      );
-                      await verifyVoice();
-
-                    },
-                    
+                  Container(
+                    alignment: Alignment.center,
+                    height: 120,
+                    width: devicesize.width,
+                    color: Colors.amber,
                     child: Text(
-                      'Verify!',
-                      style: TextStyle(
-                        color: Colors.yellow,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      'Sing Something for 10 seconds\nor\nSatyameva Jayathe \nVasuidaika Kutumbam\n',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(
-              height: 40,
-            ),
-            Container(
-              alignment: Alignment.center,
-              height: 40,
-              width: devicesize.width,
-              color: Colors.amber,
-              child: Text(
-                'Say - hello India!',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

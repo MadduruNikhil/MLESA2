@@ -91,7 +91,6 @@ class _FaceRecognitionScreenState extends State<FaceRecognitionScreen> {
   Widget build(BuildContext context) {
     final devicesize = MediaQuery.of(context).size;
     return Scaffold(
-      drawer: SideDrawer(),
       key: verifyglobalKey,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -110,11 +109,9 @@ class _FaceRecognitionScreenState extends State<FaceRecognitionScreen> {
         height: devicesize.height,
         width: devicesize.width,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.purple,
-              Colors.pink,
-            ],
+          image: DecorationImage(
+            image: AssetImage('./assets/images/Background.png'),
+            fit: BoxFit.cover,
           ),
         ),
         child: Column(
@@ -162,56 +159,78 @@ class _FaceRecognitionScreenState extends State<FaceRecognitionScreen> {
             ),
             SizedBox(height: 40),
             InkWell(
-              child: Container(
-                padding: EdgeInsets.all(30),
-                alignment: Alignment.center,
-                width: double.infinity,
-                color: Colors.amber,
-                child: Text('Verify!'),
-              ),
-              onTap: () async {
-                verifyglobalKey.currentState.showSnackBar(
-                  SnackBar(
-                    content: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                    duration: Duration(seconds: 30),
-                  ),
-                );
-                Map<String, dynamic> results = await faceverification();
-
-                print(results);
-                var distance = results['pair_1'];
-                var legsidedistance = results['pair_2'];
-                var offsidedistance = results['pair_3'];
-                showDialog(
-                  barrierDismissible: false,
-                  builder: (ctx) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).pushNamed(HomeScreen.routename);
-                      },
-                      child: Dialog(
-                        child: Container(
-                          child: Center(
-                            child: ((distance <= 0.4 &&
-                                    legsidedistance <= 0.4 &&
-                                    offsidedistance <= 0.4))
-                                ? Icon(
-                                    Icons.verified,
-                                  )
-                                : Icon(
-                                    Icons.not_interested,
-                                  ),
-                          ),
-                        ),
+                child: Container(
+                  padding: EdgeInsets.all(30),
+                  alignment: Alignment.center,
+                  width: double.infinity,
+                  color: Colors.amber,
+                  child: Text('Verify!'),
+                ),
+                onTap: () async {
+                  verifyglobalKey.currentState.showSnackBar(
+                    SnackBar(
+                      content: Center(
+                        child: CircularProgressIndicator(),
                       ),
+                      duration: Duration(seconds: 30),
+                    ),
+                  );
+                  Map<String, dynamic> results = await faceverification();
+                  if (results['status']) {
+                    print(results);
+                    var distance = results['pair_1'];
+                    var legsidedistance = results['pair_2'];
+                    var offsidedistance = results['pair_3'];
+                    showDialog(
+                      barrierDismissible: false,
+                      builder: (ctx) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: Dialog(
+                            child: Container(
+                              child: Center(
+                                child: ((distance <= 0.25 &&
+                                        legsidedistance <= 0.4 &&
+                                        offsidedistance <= 0.4))
+                                    ? Icon(
+                                        Icons.verified,
+                                      )
+                                    : Icon(
+                                        Icons.not_interested,
+                                      ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      context: context,
                     );
-                  },
-                  context: context,
-                );
-              },
-            )
+                  } else {
+                    showDialog(
+                      barrierDismissible: false,
+                      builder: (ctx) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.of(context)
+                                .popAndPushNamed(HomeScreen.routename);
+                          },
+                          child: Dialog(
+                            child: Container(
+                              child: Center(
+                                child: Text(
+                                  results['Message'],
+                                ),
+                             ),
+                            ),
+                          ),
+                        );
+                      },
+                      context: context,
+                    );
+                  }
+                })
           ],
         ),
       ),

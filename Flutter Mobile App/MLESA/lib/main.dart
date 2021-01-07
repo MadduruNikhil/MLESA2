@@ -12,7 +12,6 @@ import './Screens/HomeScreen.dart';
 import './Screens/UserDetails.dart';
 import './Screens/SignatureScreen.dart';
 
-
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
@@ -56,7 +55,7 @@ class _HomeState extends State<Home> {
         AuthScreen.routename: (_) => AuthScreen(),
         UserDetails.routename: (_) => UserDetails(),
         SignatureScreen.routename: (_) => SignatureScreen(),
-        },
+      },
     );
   }
 }

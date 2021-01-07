@@ -9,6 +9,7 @@ import '../Screens/UpdateVoiceScreen.dart';
 import '../Screens/VoiceVerification.dart';
 import '../Screens/UserDetails.dart';
 import '../Screens/SignatureScreen.dart';
+import '../Screens/AuthScreen.dart';
 
 class SideDrawer extends StatefulWidget {
   @override
@@ -30,25 +31,7 @@ class _SideDrawerState extends State<SideDrawer> {
         ),
         child: ListView(
           children: [
-           Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                    width: 4,
-                    color: Colors.deepPurple,
-                  )),
-              margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-              color: Colors.amber,
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: ListTile(
-                  title: Text('Logout'),
-                  onTap: () {
-                    FirebaseAuth.instance.signOut();
-                  },
-                ),
-              ),
-            ),
+            
             Card(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -162,7 +145,8 @@ class _SideDrawerState extends State<SideDrawer> {
                 child: ListTile(
                   title: Text('User Details!'),
                   onTap: () {
-                    Navigator.of(context).popAndPushNamed(UserDetails.routename);
+                    Navigator.of(context)
+                        .popAndPushNamed(UserDetails.routename);
                   },
                 ),
               ),

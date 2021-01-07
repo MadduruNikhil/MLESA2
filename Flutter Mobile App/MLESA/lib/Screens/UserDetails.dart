@@ -66,7 +66,7 @@ class _UserDetailsState extends State<UserDetails> {
           'DOB': _dob,
           'Mobile': _mobile.trim(),
           'AAdhar': _aadhar.trim(),
-          'Gender':_gender.trim(),
+          'Gender': _gender.trim(),
         },
       );
       Navigator.of(context).popAndPushNamed(HomeScreen.routename);
@@ -108,11 +108,9 @@ class _UserDetailsState extends State<UserDetails> {
         height: devicesize.height,
         width: devicesize.width,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.purple,
-              Colors.pink,
-            ],
+          image: DecorationImage(
+            image: AssetImage('./assets/images/Background.png'),
+            fit: BoxFit.cover,
           ),
         ),
         child: Column(
@@ -180,7 +178,8 @@ class _UserDetailsState extends State<UserDetails> {
                           height: 10,
                         ),
                         DropdownButtonFormField(
-                          decoration: InputDecoration(labelText: 'Gender',labelStyle: style1),
+                          decoration: InputDecoration(
+                              labelText: 'Gender', labelStyle: style1),
                           validator: (value) {
                             if (value == null) {
                               return 'Please Provide Your Gender';

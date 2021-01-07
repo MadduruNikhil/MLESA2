@@ -1,11 +1,15 @@
 import 'dart:convert';
+import 'package:MLESA/Screens/HomeScreen.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:file/file.dart';
 import 'dart:io' as IO;
+
+import 'package:convert/convert.dart';
+
 import 'package:file/local.dart';
 
-
+import 'package:http/http.dart' as http;
 
 import 'package:path_provider/path_provider.dart';
 
@@ -15,6 +19,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../widgets/SideDrawer.dart';
+
+import '../Screens/VoiceVerification.dart';
 
 class UpdateVoiceScreen extends StatefulWidget {
   final LocalFileSystem localFileSystem;
@@ -40,8 +46,11 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
   // var _loading = false;
   var _recording = false;
 
-  _initiate() async {
+  Future<void> _initiate() async {
     try {
+      if (!mounted) {
+        return;
+      }
       if (await FlutterAudioRecorder.hasPermissions) {
         String customPath = '/audio';
         IO.Directory appDocDirectory;
@@ -64,6 +73,9 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
         var current = await _recorder.current(channel: 0);
         print(current);
         // should be "Initialized", if all working fine
+        if (!mounted) {
+          return;
+        }
         setState(() {
           _current = current;
           _currentStatus = current.status;
@@ -82,9 +94,15 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
   }
 
   _start() async {
+    if (!mounted) {
+      return;
+    }
     try {
       await _recorder.start();
       var recording = await _recorder.current(channel: 0);
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _current = recording;
       });
@@ -96,6 +114,9 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
         }
 
         var current = await _recorder.current(channel: 0);
+        if (!mounted) {
+          return;
+        }
         setState(() {
           _current = current;
           _currentStatus = _current.status;
@@ -108,10 +129,23 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
   }
 
   _stop() async {
+    if (!mounted) {
+      return;
+    }
     var result = await _recorder.stop();
     file = widget.localFileSystem.file(result.path);
+    updateVoiceglobalKey.currentState.showSnackBar(
+      SnackBar(
+        content: (file != null)
+            ? Text('Recorded! You can upload')
+            : Text('Record Again!'),
+      ),
+    );
     print(file.path);
     print("File length: ${await file.length()}");
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _current = result;
       _currentStatus = _current.status;
@@ -119,38 +153,45 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
     print(_current.status);
   }
 
-  void recordVoice() async {
+  Future<void> recordVoice() async {
+    await _initiate();
     _start();
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _recording = true;
     });
 
-    Timer(Duration(seconds: 2), () {
+    Timer(Duration(seconds: 15), () {
       _stop();
+
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _recording = false;
       });
     });
     print(_currentStatus);
-    updateVoiceglobalKey.currentState.showSnackBar(
-      SnackBar(
-        content: (file.readAsBytesSync() != null)
-            ? Text('Recorded! You can upload')
-            : Text('Record Again!'),
-      ),
-    );
   }
 
-  void upload() async {
-    var bytes = file.readAsBytesSync();
-    String voiceEncoded = base64.encode(bytes);
-    print(file.path);
+  Future<String> getProfileId() async {
+    DocumentSnapshot doc = await Firestore.instance
+        .document('Users/${_user.uid}/VoiceMapping/${_user.uid}')
+        .get();
+    return doc.data['VoiceProfileID'];
+  }
 
+  Future<void> re_upload(bool uploadedstatus) async {
+    print(uploadedstatus);
+    var bytes = file.readAsBytesSync();
+    String voiceEncoded = hex.encode(bytes);
     await Firestore.instance
         .document('Users/${_user.uid}/VoiceMapping/${_user.uid}')
         .updateData(
       {
-        'UploadedVoice': true,
+        'UploadedVoice': uploadedstatus,
         'UploadedVoiceData': voiceEncoded,
       },
     ).catchError(
@@ -161,20 +202,50 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
         }
       },
     );
-    updateVoiceglobalKey.currentState.showSnackBar(
-      SnackBar(
-        content: 
-             Text('Voice Uploaded')
-           
+  }
+
+  Future<Map<String, dynamic>> upload() async {
+    var bytes = file.readAsBytesSync();
+    String voiceEncoded = hex.encode(bytes);
+    final String profileId = await getProfileId();
+    final url =
+        'https://westus.api.cognitive.microsoft.com//speaker/verification/v2.0/text-independent/profiles/$profileId/enrollments';
+    final response = await http.post(
+      url,
+      headers: {
+        "Content-Type": 'application/json',
+        "Ocp-Apim-Subscription-Key": "d621ac82ff714308920f5e712722b46d",
+      },
+      body: json.encode(
+        {
+          "audioData": voiceEncoded,
+        },
       ),
     );
+    print(response.body);
+    Map<String, dynamic> data = json.decode(response.body);
+
+    updateVoiceglobalKey.currentState.showSnackBar(
+      SnackBar(
+        content: Text(
+          'Voice Uploaded',
+        ),
+      ),
+    );
+    return data;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    if (mounted) {
+      _recorder.stop();
+    }
   }
 
   @override
   void initState() {
-    
     super.initState();
-    _initiate();
     _initUser();
   }
 
@@ -186,7 +257,6 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
   Widget build(BuildContext context) {
     final devicesize = MediaQuery.of(context).size;
     return Scaffold(
-      drawer: SideDrawer(),
       key: updateVoiceglobalKey,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -205,16 +275,26 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
         height: devicesize.height,
         width: devicesize.width,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.purple,
-              Colors.pink,
-            ],
+          image: DecorationImage(
+            image: AssetImage('./assets/images/Background.png'),
+            fit: BoxFit.cover,
           ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Text(
+              'It Is good to Upload Lot of voice Data for Better Efficiency!',
+            ),
+            Container(
+              alignment: Alignment.center,
+              width: devicesize.width,
+              height: 70,
+              color: Colors.amber,
+              child: _recording
+                  ? Text('${15 - _current.duration.inSeconds}')
+                  : Text('Need to Upload total of 20 Seconds of Data'),
+            ),
             Container(
               width: devicesize.width,
               height: 70,
@@ -233,13 +313,15 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
                 children: [
                   RaisedButton(
                     color: Colors.black,
-                    onPressed: () {
-                      recordVoice();
+                    onPressed: () async {
+                      await recordVoice();
                     },
                     child: Text(
                       'Record!',
                       style: TextStyle(
-                          color: Colors.yellow, fontWeight: FontWeight.bold),
+                        color: Colors.yellow,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   SizedBox(
@@ -247,8 +329,94 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
                   ),
                   RaisedButton(
                     color: Colors.black,
-                    onPressed: () {
-                      upload();
+                    onPressed: () async {
+                      showDialog(
+                        useRootNavigator: true,
+                        barrierDismissible: false,
+                        useSafeArea: false,
+                        context: context,
+                        builder: (_) {
+                          return Dialog(
+                            child: FutureBuilder(
+                              future: upload(),
+                              builder: (ctx, snap) {
+                                if (snap.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+                                if (snap.connectionState ==
+                                        ConnectionState.done &&
+                                    snap != null) {
+                                  var data = snap.data;
+                                  return Container(
+                                    height: devicesize.height,
+                                    width: devicesize.width,
+                                    child: (data == null)
+                                        ? Center(
+                                            child: Column(
+                                              children: [
+                                                Text(
+                                                    'Audio Is Too Noisy!\nTry Again!'),
+                                              ],
+                                            ),
+                                          )
+                                        : Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                "Status : ${data['enrollmentStatus']}",
+                                              ),
+                                              Text(
+                                                "UploadCount : ${data['enrollmentsCount']}",
+                                              ),
+                                              Text(
+                                                "More Time to Upload : ${data['remainingEnrollmentsSpeechLength']}",
+                                              ),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  RaisedButton(
+                                                    child: Text(
+                                                      (data['enrollmentStatus'] ==
+                                                              'Enrolled')
+                                                          ? 'Now VerifY!'
+                                                          : 'Re-Upload',
+                                                    ),
+                                                    onPressed: () async {
+                                                      if (data[
+                                                              'enrollmentStatus'] ==
+                                                          'Enrolled') {
+                                                        await re_upload(true);
+                                                        Navigator.of(context,rootNavigator: true)
+                                                            .popAndPushNamed(
+                                                                VoiceVerificationScreen
+                                                                    .routename);
+                                                      } else {
+                                                        re_upload(false);
+                                                        Navigator.of(context,rootNavigator: true)
+                                                            .popAndPushNamed(
+                                                          HomeScreen.routename,
+                                                        );
+                                                      }
+                                                    },
+                                                  ),
+                                                ],
+                                              )
+                                            ],
+                                          ),
+                                  );
+                                } else {
+                                  return LinearProgressIndicator();
+                                }
+                              },
+                            ),
+                          );
+                        },
+                      );
                     },
                     child: Text(
                       'Upload!',
@@ -266,11 +434,11 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
             ),
             Container(
               alignment: Alignment.center,
-              height: 40,
+              height: 120,
               width: devicesize.width,
               color: Colors.amber,
               child: Text(
-                'Say - hello India!',
+                'Sing Something for 10 seconds\nor\nSatyameva Jayathe \nVasuidaika Kutumbam\n',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
               ),
             ),

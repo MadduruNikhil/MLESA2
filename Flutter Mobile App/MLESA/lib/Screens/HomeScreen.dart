@@ -23,6 +23,15 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () {
+              // Navigator.of(context).popAndPushNamed(HomeScreen.routename);
+              FirebaseAuth.instance.signOut();
+            },
+          )
+        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -47,11 +56,9 @@ class _HomeScreenState extends State<HomeScreen> {
               height: devicesize.height,
               width: devicesize.width,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.purple,
-                    Colors.pink,
-                  ],
+                image: DecorationImage(
+                  image: AssetImage('./assets/images/Background.png'),
+                  fit: BoxFit.cover,
                 ),
               ),
               child: SingleChildScrollView(
@@ -83,13 +90,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 height: devicesize.height / 15,
                                 width: devicesize.width / 2,
                                 child: InkWell(
-                                  onTap: () {
-                                    Navigator.of(context).pushNamed(
-                                      (snapdata['UploadedVoice'])
-                                          ? VoiceVerificationScreen.routename
-                                          : UpdateVoiceScreen.routename,
-                                    );
-                                  },
                                   child: Text(
                                     (snapdata['UploadedVoice'])
                                         ? 'Try Voice Verification!'
@@ -135,13 +135,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 height: devicesize.height / 15,
                                 width: devicesize.width / 2,
                                 child: InkWell(
-                                  onTap: () {
-                                    Navigator.of(context).pushNamed(
-                                      (snapdata['UploadedImage'])
-                                          ? FaceRecognitionScreen.routename
-                                          : UpdateScreen.routename,
-                                    );
-                                  },
                                   child: Text(
                                     (snapdata['UploadedImage'])
                                         ? 'Try Face Verification!'

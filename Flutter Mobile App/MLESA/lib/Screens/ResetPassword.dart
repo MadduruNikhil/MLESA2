@@ -73,11 +73,9 @@ class _ResetPasswordState extends State<ResetPassword> {
         height: devicesize.height,
         width: devicesize.width,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.purple,
-              Colors.pink,
-            ],
+          image: DecorationImage(
+            image: AssetImage('./assets/images/Background.png'),
+            fit: BoxFit.cover,
           ),
         ),
         child: Center(

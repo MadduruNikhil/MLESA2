@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import '../widgets/AuthForm.dart';
 
 import './ResetPassword.dart';
@@ -39,6 +42,7 @@ class _AuthScreenState extends State<AuthScreen> {
           email: email,
           password: password,
         );
+
         await Firestore.instance
             .collection('Users')
             .document(authResult.user.uid)
@@ -61,11 +65,28 @@ class _AuthScreenState extends State<AuthScreen> {
             'FrontImageData': '',
           },
         );
+        const url =
+            'https://westus.api.cognitive.microsoft.com/speaker/verification/v2.0/text-independent/profiles';
+        final response = await http.post(
+          url,
+          headers: {
+            "Ocp-Apim-Subscription-Key": "d621ac82ff714308920f5e712722b46d",
+            "Content-Type": "application/json"
+          },
+          body: json.encode(
+            {
+              "locale": "en-us",
+            },
+          ),
+        );
+        print(response.body);
+        Map<String, dynamic> data = json.decode(response.body);
         await Firestore.instance
             .collection('Users/${authResult.user.uid}/VoiceMapping')
             .document(authResult.user.uid)
             .setData(
           {
+            'VoiceProfileID': data['profileId'],
             'UploadedVoice': false,
             'VoiceData': '',
             'UploadedVoiceData': '',
@@ -105,11 +126,9 @@ class _AuthScreenState extends State<AuthScreen> {
         width: size.width,
         height: size.height,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.purple,
-              Colors.pink,
-            ],
+          image: DecorationImage(
+            image: AssetImage('./assets/images/Background.png'),
+            fit: BoxFit.cover,
           ),
         ),
         child: SingleChildScrollView(
