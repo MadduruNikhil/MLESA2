@@ -17,10 +17,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final homeglobalKey = GlobalKey<ScaffoldState>();
   @override
   Widget build(BuildContext context) {
     final devicesize = MediaQuery.of(context).size;
     return Scaffold(
+      key: homeglobalKey,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         actions: [
@@ -201,9 +203,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                   size: 38,
                                 ),
                                 SizedBox(height: 10),
-                                Text(
-                                  'Voice!',
-                                  style: TextStyle(fontWeight: FontWeight.w800),
+                                GestureDetector(
+                                  onVerticalDragEnd: (value) {
+                                    homeglobalKey.currentState.showSnackBar(SnackBar(content: Text('!DEVELOPED BY MSCN!')));
+                                  },
+                                  child: Text(
+                                    'Voice!',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w800),
+                                  ),
                                 ),
                               ],
                             ),

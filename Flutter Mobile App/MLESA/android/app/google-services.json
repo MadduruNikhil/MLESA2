@@ -1,34 +1,33 @@
 {
   "project_info": {
-    "project_number": "567298874625",
-    "firebase_url": "https://mlesa-118b8.firebaseio.com",
-    "project_id": "mlesa-118b8",
-    "storage_bucket": "mlesa-118b8.appspot.com"
+    "project_number": "397434957068",
+    "project_id": "mlesa-e1a6a",
+    "storage_bucket": "mlesa-e1a6a.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:567298874625:android:0c003741e0f2cbe9294f00",
+        "mobilesdk_app_id": "1:397434957068:android:82738d3a841d07e702ed29",
         "android_client_info": {
           "package_name": "com.example.MLESA"
         }
       },
       "oauth_client": [
         {
-          "client_id": "567298874625-2cktr089elff8qablk8ivg4tv775ekur.apps.googleusercontent.com",
+          "client_id": "397434957068-25ppek9m167q6h40reobpudsma6ik938.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBQj0ehRvivGyBEmlMo4VM_HBwcthfAL98"
+          "current_key": "AIzaSyCC3iYtwok5t_Xv7ArK4fX-_QrLBrMKDRU"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "567298874625-2cktr089elff8qablk8ivg4tv775ekur.apps.googleusercontent.com",
+              "client_id": "397434957068-25ppek9m167q6h40reobpudsma6ik938.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

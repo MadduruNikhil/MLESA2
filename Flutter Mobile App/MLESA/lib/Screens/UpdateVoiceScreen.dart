@@ -214,7 +214,7 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
       url,
       headers: {
         "Content-Type": 'application/json',
-        "Ocp-Apim-Subscription-Key": "d621ac82ff714308920f5e712722b46d",
+        "Ocp-Apim-Subscription-Key": "6c66a2e5fe1c4a68a401fa1967012192",
       },
       body: json.encode(
         {
@@ -438,7 +438,7 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
               width: devicesize.width,
               color: Colors.amber,
               child: Text(
-                'Sing Something for 10 seconds\nor\nSatyameva Jayathe \nVasuidaika Kutumbam\n',
+                'Sing Something for 20 seconds\nor\nSatyameva Jayathe \nVasuidaika Kutumbam\n',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
               ),
             ),

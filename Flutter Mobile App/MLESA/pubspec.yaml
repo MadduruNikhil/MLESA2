@@ -24,7 +24,6 @@ dependencies:
   flutter:
     sdk: flutter
   image_picker: ^0.6.7+11
-  camera: ^0.5.8+7
   http: ^0.12.2
   flutter_audio_recorder: ^0.5.5
   path_provider: ^1.6.21
