@@ -29,7 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: Icon(Icons.logout),
             onPressed: () {
-              // Navigator.of(context).popAndPushNamed(HomeScreen.routename);
+              Navigator.of(context).popUntil(
+                (route) => route.isCurrent,
+              );
               FirebaseAuth.instance.signOut();
             },
           )
@@ -205,7 +207,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 SizedBox(height: 10),
                                 GestureDetector(
                                   onVerticalDragEnd: (value) {
-                                    homeglobalKey.currentState.showSnackBar(SnackBar(content: Text('!DEVELOPED BY MSCN!')));
+                                    homeglobalKey.currentState.showSnackBar(
+                                        SnackBar(
+                                            content:
+                                                Text('!DEVELOPED BY MSCN!')));
                                   },
                                   child: Text(
                                     'Voice!',

@@ -126,7 +126,7 @@ class _SideDrawerState extends State<SideDrawer> {
                 child: ListTile(
                   title: Text('Home!'),
                   onTap: () {
-                    Navigator.of(context).popAndPushNamed(HomeScreen.routename);
+                    Navigator.of(context).pop();
                   },
                 ),
               ),

@@ -83,7 +83,6 @@ class _SignatureScreenState extends State<SignatureScreen> {
           ),
         ),
       ),
-      drawer: SideDrawer(),
       key: signdetailskey,
       body: Container(
         decoration: BoxDecoration(

@@ -29,6 +29,7 @@ dependencies:
   path_provider: ^1.6.21
   intl: ^0.16.1
   hand_signature: ^0.6.3
+  audioplayers: ^0.16.2
   
  
 

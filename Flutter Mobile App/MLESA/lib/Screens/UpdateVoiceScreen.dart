@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter_audio_recorder/flutter_audio_recorder.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -39,6 +40,7 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
 
   File file;
   FlutterAudioRecorder _recorder;
+  AudioPlayer audioPlayer = AudioPlayer();
   Recording _current;
   RecordingStatus _currentStatus = RecordingStatus.Unset;
 
@@ -176,6 +178,11 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
     print(_currentStatus);
   }
 
+  void onPlayAudio() async {
+
+    await audioPlayer.play(_current.path, isLocal: true);
+  }
+
   Future<String> getProfileId() async {
     DocumentSnapshot doc = await Firestore.instance
         .document('Users/${_user.uid}/VoiceMapping/${_user.uid}')
@@ -238,6 +245,7 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
   @override
   void dispose() {
     super.dispose();
+    audioPlayer.dispose();
     if (mounted) {
       _recorder.stop();
     }
@@ -391,13 +399,17 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
                                                               'enrollmentStatus'] ==
                                                           'Enrolled') {
                                                         await re_upload(true);
-                                                        Navigator.of(context,rootNavigator: true)
+                                                        Navigator.of(context,
+                                                                rootNavigator:
+                                                                    true)
                                                             .popAndPushNamed(
                                                                 VoiceVerificationScreen
                                                                     .routename);
                                                       } else {
                                                         re_upload(false);
-                                                        Navigator.of(context,rootNavigator: true)
+                                                        Navigator.of(context,
+                                                                rootNavigator:
+                                                                    true)
                                                             .popAndPushNamed(
                                                           HomeScreen.routename,
                                                         );
@@ -422,6 +434,17 @@ class _UpdateVoiceScreenState extends State<UpdateVoiceScreen> {
                       'Upload!',
                       style: TextStyle(
                         color: Colors.yellow,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  FlatButton(
+                    
+                    onPressed: onPlayAudio,
+                    child: Text(
+                      "Play",
+                      style: TextStyle(
+                        color: Colors.black,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

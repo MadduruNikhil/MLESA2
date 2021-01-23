@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:MLESA/Screens/HomeScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -40,9 +43,10 @@ class _UpdateScreenState extends State<UpdateScreen> {
     return true;
   }
 
-  void sendData() async {
+  Future<void> sendData() async {
     if (!checkDataUpload()) {
       print('got not');
+      // ignore: deprecated_member_use
       updateglobalKey.currentState.showSnackBar(
         SnackBar(
           duration: Duration(seconds: 2),
@@ -52,6 +56,9 @@ class _UpdateScreenState extends State<UpdateScreen> {
       );
       return;
     }
+     Timer(Duration(seconds: 2), ()  {
+         Navigator.of(context).pushNamed(HomeScreen.routename);
+      });
 
     var leftData = _leftImage.readAsBytesSync();
     var rightData = _rightImage.readAsBytesSync();
@@ -76,6 +83,7 @@ class _UpdateScreenState extends State<UpdateScreen> {
         }
       },
     );
+    // ignore: deprecated_member_use
     updateglobalKey.currentState.showSnackBar(
       SnackBar(
         duration: Duration(seconds: 2),
@@ -88,9 +96,8 @@ class _UpdateScreenState extends State<UpdateScreen> {
   Future<void> getImagedata(String side) async {
     final pickedFile = await picker.getImage(
       source: ImageSource.camera,
-      maxHeight: 1000,
+      maxHeight: 500,
       maxWidth: 500,
-      preferredCameraDevice: CameraDevice.front,
     );
     setState(
       () {
@@ -495,8 +502,8 @@ class _UpdateScreenState extends State<UpdateScreen> {
                 side: BorderSide(color: Colors.orangeAccent, width: 4),
               ),
               color: Colors.deepPurple,
-              onPressed: () {
-                sendData();
+              onPressed: () async {
+                await sendData();
               },
               child: Padding(
                 padding: const EdgeInsets.all(15.0),

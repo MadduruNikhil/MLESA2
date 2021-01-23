@@ -70,7 +70,7 @@ class _AuthScreenState extends State<AuthScreen> {
         final response = await http.post(
           url,
           headers: {
-            "Ocp-Apim-Subscription-Key": "d621ac82ff714308920f5e712722b46d",
+            "Ocp-Apim-Subscription-Key": "6c66a2e5fe1c4a68a401fa1967012192",
             "Content-Type": "application/json"
           },
           body: json.encode(
@@ -99,6 +99,7 @@ class _AuthScreenState extends State<AuthScreen> {
         message = err.message;
       }
 
+      // ignore: deprecated_member_use
       Scaffold.of(ctx).showSnackBar(
         SnackBar(
           content: Text(message),

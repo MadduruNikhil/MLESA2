@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ class _FaceRecognitionScreenState extends State<FaceRecognitionScreen> {
         .get();
     const url = 'http://34.121.145.40:5500/VerifyFace';
     if (_image == null) {
+      // ignore: deprecated_member_use
       verifyglobalKey.currentState.showSnackBar(
         SnackBar(
           duration: Duration(seconds: 2),
@@ -56,17 +58,16 @@ class _FaceRecognitionScreenState extends State<FaceRecognitionScreen> {
           },
         ),
       );
-
       return json.decode(response.body);
     }
   }
 
   Future<void> getImageData() async {
     final pickedFile = await picker.getImage(
-        source: ImageSource.camera,
-        maxHeight: 1000,
-        maxWidth: 500,
-        preferredCameraDevice: CameraDevice.front);
+      maxHeight: 500,
+      maxWidth: 500,
+      source: ImageSource.camera,
+    );
 
     setState(() {
       _image = File(pickedFile.path);
@@ -167,6 +168,7 @@ class _FaceRecognitionScreenState extends State<FaceRecognitionScreen> {
                   child: Text('Verify!'),
                 ),
                 onTap: () async {
+                  // ignore: deprecated_member_use
                   verifyglobalKey.currentState.showSnackBar(
                     SnackBar(
                       content: Center(
@@ -222,7 +224,7 @@ class _FaceRecognitionScreenState extends State<FaceRecognitionScreen> {
                                 child: Text(
                                   results['Message'],
                                 ),
-                             ),
+                              ),
                             ),
                           ),
                         );
